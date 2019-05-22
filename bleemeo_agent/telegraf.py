@@ -1676,7 +1676,7 @@ class Telegraf:
             )
             if metric_point is None or metric_point.time < timestamp:
                 raise MissingMetric()
-            elif metric_point.time > timestamp:
+            if metric_point.time > timestamp:
                 raise ComputationFail()
             return metric_point.value
 
