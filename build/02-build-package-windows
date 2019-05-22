@@ -22,16 +22,6 @@ trap cleanup EXIT
 docker run --rm -v "${WORKSPACE}":/srv/workspace bleemeo/nsisbuilder virtualenv -p /usr/bin/python3 /srv/workspace/venv_pynsist
 docker run --rm -v "${WORKSPACE}":/srv/workspace -w /srv/workspace/bleemeo-agent-${VERSION}-windows/ bleemeo/nsisbuilder /srv/workspace/venv_pynsist/bin/pip install .[bleemeo,sentry,web]
 
-# markupsafe have some optional speedup compiled. Since it does not provide
-# wheel and we are not under Windows, remove the speedup and include pure-Python
-# version
-docker run --rm -v "${WORKSPACE}":/srv/workspace bleemeo/nsisbuilder sh -c 'rm /srv/workspace/venv_pynsist/lib/python3.?/site-packages/markupsafe/*.so'
-
-# Some package (APScheduler at least) require information from *.dist-info that
-# are not included by pynsist. Add them manually.
-mkdir "${WORKSPACE}"/bleemeo-agent-${VERSION}-windows/packaging/windows/pynsist_pkgs/
-cp -a "${WORKSPACE}"/venv_pynsist/lib/python3.?/site-packages/*-*.dist-info "${WORKSPACE}"/bleemeo-agent-${VERSION}-windows/packaging/windows/pynsist_pkgs/
-
 mkdir "${WORKSPACE}"/telegraf
 wget -O "${WORKSPACE}"/telegraf/telegraf.zip https://dl.influxdata.com/telegraf/releases/telegraf-1.10.1_windows_amd64.zip
 docker run --rm -v "${WORKSPACE}":/srv/workspace -w /srv/workspace bleemeo/nsisbuilder unzip telegraf/telegraf.zip
