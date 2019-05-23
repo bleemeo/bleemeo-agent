@@ -1487,8 +1487,9 @@ class Core:
         threads_started = False
         try:
             self.setup_signal()
+            self.top_info = bleemeo_agent.util.get_top_info(self)
             with self._docker_client_cond:
-                self._docker_connect(timeout_retries=3)
+                self._docker_connect(timeout_retries=3, log_error=True)
             self._k8s_connect()
 
             self.schedule_tasks()
@@ -1540,15 +1541,21 @@ class Core:
         if os.name != 'nt':
             signal.signal(signal.SIGHUP, handler_hup)
 
-    def _docker_connect(self, timeout_retries=1):
+    def _docker_connect(self, timeout_retries=1, log_error=False):
         """ Try to connect to docker remote API
 
             Assume _docker_client_cond is held
         """
         if docker is None:
-            logging.debug(
-                'docker-py not installed. Skipping docker-related feature'
-            )
+            if log_error:
+                logging.warning(
+                    "docker-py not installed, the Docker integration will be "
+                    " disabled",
+                )
+                logging.warning(
+                    "Installing package python3-docker or python36-docker and"
+                    " restarting the Agent should fix this issue",
+                )
             return
 
         if hasattr(docker, 'APIClient'):
@@ -1569,10 +1576,27 @@ class Core:
             except Exception as exc:  # pylint: disable=broad-except
                 if (not isinstance(exc, requests.exceptions.Timeout)
                         or timeout_retries == 1):
-                    logging.debug(
-                        'Docker ping failed. Assume Docker is not used: %s',
-                        exc,
-                    )
+                    if log_error:
+                        dockerd_running = (
+                            bleemeo_agent.util.is_process_running(
+                                'dockerd',
+                                self.top_info,
+                            )
+                        )
+                        if 'Permission denied' in str(exc):
+                            logging.warning(
+                                "The agent is not permitted to access Docker,"
+                                " the Docker integration will be disabled."
+                            )
+                            logging.warning(
+                                "'adduser bleemeo docker' and a restart of the"
+                                " Agent should fix this issue",
+                            )
+                        elif dockerd_running:
+                            logging.info(
+                                "Unable to contact Docker: %s",
+                                exc,
+                            )
                     self.docker_client = None
                     break
                 else:
@@ -2516,6 +2540,8 @@ class Core:
         """ Watch for docker event and re-run discovery
         """
         last_event_at = time.time()
+        log_error = False
+        last_reenable_log_error = time.time()
 
         while True:
             reconnect_delay = 5
@@ -2527,7 +2553,12 @@ class Core:
                     reconnect_delay = min(60, reconnect_delay * 2)
 
                     if self.docker_client is None:
-                        self._docker_connect()
+                        self._docker_connect(log_error=log_error)
+                        log_error = False
+                        # Re-enable error logging every hour
+                        if last_reenable_log_error + 3600 < time.time():
+                            last_reenable_log_error = time.time()
+                            log_error = True
 
                 try:
                     self.docker_client.ping()
