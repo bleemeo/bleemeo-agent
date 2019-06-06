@@ -586,6 +586,14 @@ class Telegraf:
                 part_dict['item'] = '-'.join(item_part)
         elif part[-2] == 'phpfpm':
             part_dict['instance'] = part[2]
+        elif len(part) == 4 and part[2] in ('counter', 'gauge'):
+            part_dict = {
+                'metric_type': part[2],
+                'telegraf_plugin': part[3],
+                'metric_name': '',
+            }
+        elif len(part) == 5 and part[2] == 'timing':
+            part_dict['metric_type'] = part[2]
 
         return part_dict
 
@@ -634,12 +642,19 @@ class Telegraf:
             # telegraf.cpu.usage_steal;cpu=cpu-total;host=xps-pierref
             tmp = name.split(';')
             names = tmp[0].split('.')
-            if len(names) != 3:
+            if len(names) == 3:
+                part = {
+                    'telegraf_plugin': names[1],
+                    'metric_name': names[2],
+                }
+            elif len(names) == 2:
+                # Statsd don't send the plugin name :(
+                part = {
+                    'telegraf_plugin': names[1],
+                    'metric_name': '',
+                }
+            else:
                 return
-            part = {
-                'telegraf_plugin': names[1],
-                'metric_name': names[2],
-            }
             for label in tmp[1:]:
                 if '=' not in label:
                     return
