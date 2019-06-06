@@ -586,7 +586,7 @@ class Telegraf:
                 part_dict['item'] = '-'.join(item_part)
         elif part[-2] == 'phpfpm':
             part_dict['instance'] = part[2]
-        elif len(part) == 4 and part[2] in ('counter', 'gauge'):
+        elif len(part) == 4 and part[2] in ('counter', 'gauge', 'set'):
             part_dict = {
                 'metric_type': part[2],
                 'telegraf_plugin': part[3],
@@ -1584,6 +1584,10 @@ class Telegraf:
         elif (part.get('metric_type', '') == 'gauge'
               and self.core.config['telegraf.statsd.enabled']):
             # statsd gauge
+            name = 'statsd_' + part['telegraf_plugin']
+        elif (part.get('metric_type', '') == 'set'
+              and self.core.config['telegraf.statsd.enabled']):
+            # statsd set
             name = 'statsd_' + part['telegraf_plugin']
         elif (part.get('metric_type', '') == 'timing'
               and self.core.config['telegraf.statsd.enabled']):
