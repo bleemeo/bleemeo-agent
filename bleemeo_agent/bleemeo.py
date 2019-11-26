@@ -1586,7 +1586,9 @@ class BleemeoConnector(threading.Thread):
             self._bleemeo_cache = bleemeo_cache.copy()
 
             if sync_run:
-                self._unregistered_metric_queue_cleanup()
+                self._unregistered_metric_queue_cleanup(
+                    push_to_metric_queue=True
+                )
 
     @property
     def registration_at(self):
@@ -1970,7 +1972,9 @@ class BleemeoConnector(threading.Thread):
                 bleemeo_cache.update_lookup_map()
                 self._bleemeo_cache = bleemeo_cache
                 reg_count_before_update = 60
-                self._unregistered_metric_queue_cleanup()
+                self._unregistered_metric_queue_cleanup(
+                    push_to_metric_queue=True
+                )
 
         bleemeo_cache.update_lookup_map()
 
@@ -2744,7 +2748,7 @@ class BleemeoConnector(threading.Thread):
                 fact.uuid,
             )
 
-    def _unregistered_metric_queue_cleanup(self):
+    def _unregistered_metric_queue_cleanup(self, push_to_metric_queue=False):
         """ Process metrics that are waiting in _unregistered_metric_queue
 
             * Any now regirested metrics are moved back to _metric_queue
@@ -2761,7 +2765,7 @@ class BleemeoConnector(threading.Thread):
                 key = (metric_point.label, short_item)
                 metric = self._bleemeo_cache.metrics_by_labelitem.get(key)
 
-                if metric is not None:
+                if metric is not None and push_to_metric_queue:
                     self._metric_queue.put(metric_point)
                 elif (key in self._current_metrics
                       and time.time() - metric_point.time < 7200):
