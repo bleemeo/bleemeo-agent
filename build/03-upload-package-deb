@@ -5,7 +5,10 @@ set -e
 cd work
 WORKSPACE=`pwd`
 
-dput bleemeo-agent "${WORKSPACE}"/result/bleemeo-agent_*.changes
+docker run --rm -v ${WORKSPACE}:/srv/workspace -w /srv/workspace \
+    -v ${HOME}/.dput.cf:/root/.dput.cf:ro \
+    -v /srv/www/packages.bleemeo.com/htdocs/bleemeo-agent/:/srv/www/packages.bleemeo.com/htdocs/bleemeo-agent/ \
+    registry.bleemeo.work/bleemeo/pbuilder sh -c 'dput bleemeo-agent ./result/bleemeo-agent_*.changes'
 
 REPREPRO_ROOT="/srv/www/packages.bleemeo.com/htdocs/bleemeo-agent/"
 REPREPRO_DOCKER_CMD="docker run --rm -v ${REPREPRO_ROOT}:${REPREPRO_ROOT} -v ${HOME}/.gnupg:/root/.gnupg registry.bleemeo.work/bleemeo/reprepro reprepro -Vb ${REPREPRO_ROOT}"
