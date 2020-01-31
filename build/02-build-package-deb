@@ -22,7 +22,7 @@ build_package(){
     rm -f "${WORKSPACE}"/bleemeo-agent-${VERSION}${version_suffix}/debian/changelog
     docker run --rm -v "${WORKSPACE}":/srv/workspace -w /srv/workspace/bleemeo-agent-${VERSION}${version_suffix} \
         -e DEBEMAIL=jenkins@bleemeo.com -e DEBFULLNAME="Bleemeo Packaging Team" \
-        bleemeo/pbuilder dch \
+        registry.bleemeo.work/bleemeo/pbuilder dch \
             --create --package bleemeo-agent \
             --newversion ${VERSION}${version_suffix} \
             --distribution ${dist_version} \
@@ -30,13 +30,13 @@ build_package(){
             "Build package based on ${COMMIT_HASH} commit for ${dist_name} ${dist_version}"
 
     docker run --rm -v "${WORKSPACE}":/srv/workspace -w /srv/workspace \
-        bleemeo/pbuilder dpkg-source -b bleemeo-agent-${VERSION}${version_suffix}
+        registry.bleemeo.work/bleemeo/pbuilder dpkg-source -b bleemeo-agent-${VERSION}${version_suffix}
     rm -fr "${WORKSPACE}"/bleemeo-agent-${VERSION}${version_suffix}
 
     docker run --privileged=true --rm \
         -v /srv/pbuilder:/srv/pbuilder \
         -v "${WORKSPACE}":/srv/workspace -w /srv/workspace \
-        bleemeo/pbuilder pbuilder \
+        registry.bleemeo.work/bleemeo/pbuilder pbuilder \
             build \
             --basetgz /srv/pbuilder/${dist_name}-${dist_version}-amd64-bleemeo-agent.tgz \
             --buildresult /srv/workspace/result \

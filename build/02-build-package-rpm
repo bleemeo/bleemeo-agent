@@ -22,7 +22,7 @@ build_centos(){
     # Fedora - or more recent version of rpmbuild - no longer does this check.
     docker run --rm \
         -v "${WORKSPACE}":/srv/workspace -w /srv/workspace \
-        bleemeo/centos-pkg-builder sh -ec "
+        registry.bleemeo.work/bleemeo/centos-pkg-builder sh -ec "
     cp -v bleemeo-agent_${VERSION}.tar /root/rpmbuild/SOURCES/
     cp -v bleemeo-agent.spec /root/rpmbuild/SPECS/
     rpmbuild --define 'dist .el${centos_version}.centos' --define '_srcrpmdir ./' -bs /root/rpmbuild/SPECS/bleemeo-agent.spec
@@ -32,7 +32,7 @@ build_centos(){
     docker run --rm --privileged \
         -v "${WORKSPACE}":/srv/workspace -w /srv/workspace \
         -v /srv/mock:/var/cache/mock \
-        bleemeo/centos-pkg-builder \
+        registry.bleemeo.work/bleemeo/centos-pkg-builder \
         mockchain -r epel-${centos_version}-x86_64 --tmp_prefix tmpbuild -m --resultdir=./result -m --old-chroot -a 'https://packages.bleemeo.com/bleemeo-agent/centos/$releasever/$basearch/' bleemeo-agent-${VERSION}-1.el${centos_version}.centos.src.rpm
 
     rm -f "${WORKSPACE}"/bleemeo-agent-${VERSION}-1.el${centos_version}.centos.src.rpm
@@ -51,14 +51,14 @@ build_fedora(){
 
     docker run --rm \
         -v "${WORKSPACE}":/srv/workspace -w /srv/workspace \
-        bleemeo/fedora-pkg-builder \
+        registry.bleemeo.work/bleemeo/fedora-pkg-builder \
         rpmbuild --define "dist .fc${fedora_version}" --define "_sourcedir ./" --define "_srcrpmdir ./" -bs bleemeo-agent.spec
     rm -f "${WORKSPACE}"/bleemeo-agent.spec
 
     docker run --rm --privileged \
         -v /srv/mock:/var/cache/mock \
         -v "${WORKSPACE}":/srv/workspace -w /srv/workspace \
-        bleemeo/fedora-pkg-builder \
+        registry.bleemeo.work/bleemeo/fedora-pkg-builder \
         mockchain -r fedora-${fedora_version}-x86_64 --tmp_prefix tmpbuild -m --resultdir=./result -m --old-chroot -a 'https://packages.bleemeo.com/bleemeo-agent/fedora/$releasever/$basearch/' bleemeo-agent-${VERSION}-1.fc${fedora_version}.src.rpm
 
     rm -f "${WORKSPACE}"/bleemeo-agent-${VERSION}-1.fc${fedora_version}.src.rpm

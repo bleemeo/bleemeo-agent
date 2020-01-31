@@ -15,12 +15,12 @@ sed -i -e "s/^version=0.1$/version=${VERSION}/" \
 cleanup() {
     # Some files are written by Docker and therefor owned by root. We must
     # remove them as root.
-    docker run --rm -v "${WORKSPACE}":/srv/workspace -w /srv/workspace bleemeo/nsisbuilder rm -fr venv_pynsist bleemeo-agent-${VERSION}-windows/
+    docker run --rm -v "${WORKSPACE}":/srv/workspace -w /srv/workspace registry.bleemeo.work/bleemeo/nsisbuilder rm -fr venv_pynsist bleemeo-agent-${VERSION}-windows/
 }
 trap cleanup EXIT
 
-docker run --rm -v "${WORKSPACE}":/srv/workspace bleemeo/nsisbuilder virtualenv -p /usr/bin/python3 /srv/workspace/venv_pynsist
-docker run --rm -v "${WORKSPACE}":/srv/workspace -w /srv/workspace/bleemeo-agent-${VERSION}-windows/ bleemeo/nsisbuilder /srv/workspace/venv_pynsist/bin/pip install .[bleemeo,sentry,web]
+docker run --rm -v "${WORKSPACE}":/srv/workspace registry.bleemeo.work/bleemeo/nsisbuilder virtualenv -p /usr/bin/python3 /srv/workspace/venv_pynsist
+docker run --rm -v "${WORKSPACE}":/srv/workspace -w /srv/workspace/bleemeo-agent-${VERSION}-windows/ registry.bleemeo.work/bleemeo/nsisbuilder /srv/workspace/venv_pynsist/bin/pip install .[bleemeo,sentry,web]
 
 # Some package (APScheduler at least) require information from *.dist-info that
 # are not included by pynsist. Add them manually.
@@ -29,10 +29,10 @@ cp -a "${WORKSPACE}"/venv_pynsist/lib/python3.?/site-packages/*-*.dist-info "${W
 
 mkdir "${WORKSPACE}"/telegraf
 wget -O "${WORKSPACE}"/telegraf/telegraf.zip https://dl.influxdata.com/telegraf/releases/telegraf-1.10.1_windows_amd64.zip
-docker run --rm -v "${WORKSPACE}":/srv/workspace -w /srv/workspace bleemeo/nsisbuilder unzip telegraf/telegraf.zip
+docker run --rm -v "${WORKSPACE}":/srv/workspace -w /srv/workspace registry.bleemeo.work/bleemeo/nsisbuilder unzip telegraf/telegraf.zip
 
-docker run --rm -v "${WORKSPACE}":/srv/workspace bleemeo/nsisbuilder /srv/workspace/venv_pynsist/bin/pip install wmi 'pynsist<2.0'
-docker run --rm -v "${WORKSPACE}":/srv/workspace -w /srv/workspace bleemeo/nsisbuilder /srv/workspace/venv_pynsist/bin/pynsist bleemeo-agent-${VERSION}-windows/packaging/windows/installer.cfg
+docker run --rm -v "${WORKSPACE}":/srv/workspace registry.bleemeo.work/bleemeo/nsisbuilder /srv/workspace/venv_pynsist/bin/pip install wmi 'pynsist<2.0'
+docker run --rm -v "${WORKSPACE}":/srv/workspace -w /srv/workspace registry.bleemeo.work/bleemeo/nsisbuilder /srv/workspace/venv_pynsist/bin/pynsist bleemeo-agent-${VERSION}-windows/packaging/windows/installer.cfg
 
 mkdir -p "${WORKSPACE}"/result
 cp -a bleemeo-agent-${VERSION}-windows/nsis/bleemeo-agent_${VERSION}.exe "${WORKSPACE}"/result
