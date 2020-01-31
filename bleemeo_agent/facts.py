@@ -469,6 +469,15 @@ def _system_has_swap():
     return psutil.swap_memory().total > 0
 
 
+def strip_or_none(value):
+    """ Call value.strip() after ensuring that value is a string
+    """
+    if isinstance(value, str):
+        return value.strip()
+
+    return None
+
+
 def get_facts_root():
     """ Gather facts that need root privilege and write them in yaml file
     """
@@ -609,18 +618,18 @@ def get_facts(core):
         if result:
             system_info = result[0]
             facts.update({
-                'product_name': system_info.Model.strip(),
-                'system_vendor': system_info.Manufacturer.strip(),
+                'product_name': strip_or_none(system_info.Model),
+                'system_vendor': strip_or_none(system_info.Manufacturer),
             })
 
         result = wmi_connection.Win32_SystemBIOS()
         if result:
             bios_info = result[0].PartComponent
             facts.update({
-                'bios_released_at': bios_info.ReleaseDate.strip(),
-                'bios_vendor': bios_info.Manufacturer.strip(),
-                'bios_version': bios_info.Version.strip(),
-                'serial_number': bios_info.SerialNumber.strip(),
+                'bios_released_at': strip_or_none(bios_info.ReleaseDate),
+                'bios_vendor': strip_or_none(bios_info.Manufacturer),
+                'bios_version': strip_or_none(bios_info.Version),
+                'serial_number': strip_or_none(bios_info.SerialNumber),
             })
 
     virtual = get_virtual_type(facts)
