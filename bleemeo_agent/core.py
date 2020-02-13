@@ -431,12 +431,22 @@ def get_service_info(cmdline):
 
     name = os.path.basename(arg0)
 
+    if name == '':
+        # This could happend when cmdline was quotted and contains an argument
+        # which is a path or an URL.
+        # For example "'chome http://localhost/'"
+        # In this case, retry with only first part up to whitespace
+        name = os.path.basename(arg0.split()[0])
+
     if os.name == 'nt':
         name = name.lower()
 
     # On Windows, remove the .exe if present
     if os.name == 'nt' and name.endswith('.exe'):
         name = name[:-len('.exe')]
+
+    if name == '':
+        return None
 
     # Some process alter their name to add information. Redis, nginx
     # or php-fpm do this.

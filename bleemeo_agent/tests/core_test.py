@@ -349,6 +349,16 @@ PROCESS_SERVICE2 = [
         ),
         'rabbitmq',
     ),
+    (
+        # Some non-service could cause some issue
+        "'/opt/google/chrome/chrome http://127.0.0.1:5000/'",
+        None,
+    ),
+    (
+        # Some non-service could cause some issue
+        "'/opt/ google/chrome/chrome http://127.0.0.1:5000/'",
+        None,
+    ),
 ]
 
 
