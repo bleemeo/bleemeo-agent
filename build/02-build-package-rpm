@@ -59,7 +59,7 @@ build_fedora(){
         -v /srv/mock:/var/cache/mock \
         -v "${WORKSPACE}":/srv/workspace -w /srv/workspace \
         registry.bleemeo.work/bleemeo/fedora-pkg-builder \
-        mockchain -r fedora-${fedora_version}-x86_64 --tmp_prefix tmpbuild -m --resultdir=./result -m --old-chroot -a 'https://packages.bleemeo.com/bleemeo-agent/fedora/$releasever/$basearch/' bleemeo-agent-${VERSION}-1.fc${fedora_version}.src.rpm
+        mock -r fedora-${fedora_version}-x86_64 --tmp_prefix tmpbuild --resultdir=./result --old-chroot -a 'https://packages.bleemeo.com/bleemeo-agent/fedora/$releasever/$basearch/' bleemeo-agent-${VERSION}-1.fc${fedora_version}.src.rpm
 
     rm -f "${WORKSPACE}"/bleemeo-agent-${VERSION}-1.fc${fedora_version}.src.rpm
 }
