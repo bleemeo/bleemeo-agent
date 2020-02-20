@@ -21,7 +21,6 @@ Requires:       python3-paho-mqtt
 Requires:       net-tools
 Requires:       ca-certificates
 Requires:       sudo
-Requires:       python3-docker-py
 Requires:       python3-APScheduler
 Requires:       python3-jinja2
 Requires:       python3-six
@@ -32,6 +31,7 @@ Requires:       bleemeo-agent-collector
 # https://bugzilla.redhat.com/show_bug.cgi?id=1393397
 Requires:       python3-pytz
 
+Recommends:     python3-docker
 Recommends:     python3-flask
 Recommends:     python3-influxdb
 Recommends:     python3-raven
