@@ -92,6 +92,7 @@ class GraphiteServer(threading.Thread):
         self.data_last_seen_at = None
         self.core = core
         self.listener_up = False
+        self.telegraf_last_diagnostic = None
         self.initialization_done = threading.Event()
 
     @property
@@ -123,6 +124,17 @@ class GraphiteServer(threading.Thread):
                 'telegraf',
                 self.core.top_info,
             )
+            if no_data and (
+                    self.telegraf_last_diagnostic is None or
+                    clock_now - self.telegraf_last_diagnostic > 3600):
+                self.telegraf_last_diagnostic = clock_now
+                try:
+                    bleemeo_agent.telegraf.diagnostic(self.core)
+                except Exception:  # pylint: disable=broad-except
+                    logging.info(
+                        "Diagnostic for Telegraf connection failed:",
+                        exc_info=True,
+                    )
             if (self.core.config['telegraf.statsd.enabled']
                     and no_data
                     and not telegraf_running):
@@ -132,6 +144,7 @@ class GraphiteServer(threading.Thread):
                     socket.SOCK_DGRAM
                 )
                 if stastd_port_used:
+                    self.telegraf_last_diagnostic = None
                     logging.warning(
                         'Telegraf seems not running and StatsD port (UDP %d)'
                         ' is already used. Telegraf is configured to listen on'

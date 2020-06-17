@@ -22,6 +22,7 @@ import logging
 import os
 import re
 import shlex
+import socket
 import subprocess
 import time
 
@@ -208,6 +209,77 @@ def update_discovery(core):
                 'Failed to restart telegraf after configuration update. '
                 'Continuing with current configuration')
             logging.debug('exception is:', exc_info=True)
+
+
+def diagnostic(core):
+    """ disagnostic log information that may help to find why Telegraf fail
+        to communicate with bleemeo-agent
+    """
+    is_running = bleemeo_agent.util.is_process_running(
+        'telegraf',
+        core.top_info,
+    )
+    stastd_port_used = bleemeo_agent.util.is_port_used(
+        core.config['telegraf.statsd.address'],
+        core.config['telegraf.statsd.port'],
+        socket.SOCK_DGRAM
+    )
+    localhost_ip = socket.gethostbyname("localhost")
+
+    listenner_count = 0
+    other_listenner = []
+    for conn in psutil.net_connections():
+        if conn.type != socket.SOCK_STREAM:
+            continue
+
+        if conn.status != psutil.CONN_LISTEN:
+            continue
+
+        (_, port) = conn.laddr
+        if port != core.config['graphite.listener.port']:
+            continue
+
+        listenner_count += 1
+        if conn.pid is not None and conn.pid != os.getpid():
+            other_listenner.append(conn.pid)
+
+    logging.info("Diagnostic for Telegraf connection:")
+    logging.info(
+        "raw values: Telegraf is_running=%s, statsd_port is used=%s, "
+        "localhost ip=%s, number of listenner on graphite (port %s)=%s, "
+        "other listenner=%s",
+        is_running,
+        stastd_port_used,
+        localhost_ip,
+        core.config['graphite.listener.port'],
+        listenner_count,
+        other_listenner,
+    )
+    if not is_running:
+        logging.info(
+            "The issue seems to be Telegraf not be running. "
+            "Try to restart the Telegraf service",
+        )
+        if os.name == 'nt':
+            logging.info(
+                "Telegraf should log in "
+                "C:\\ProgramData\\Bleemeo\\log\\telegraf.log",
+            )
+    if listenner_count > 1 or other_listenner:
+        logging.info(
+            "Another process also listen on Graphite (port %d) which "
+            "conflict with bleemeo-agent",
+            core.config['graphite.listener.port']
+        )
+        if other_listenner:
+            names = []
+            for pid in other_listenner:
+                proc = psutil.Process(pid)
+                try:
+                    names.append(pric.name())
+                except Exception:  # pylint: disable=broad-except
+                    names.append("pid:%d", pid)
+            logging.info("The other listenners are: %s", names)
 
 
 class Telegraf:

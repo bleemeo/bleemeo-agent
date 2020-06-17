@@ -31,7 +31,7 @@ mkdir "${WORKSPACE}"/telegraf
 wget -O "${WORKSPACE}"/telegraf/telegraf.zip https://dl.influxdata.com/telegraf/releases/telegraf-1.10.1_windows_amd64.zip
 docker run --rm -v "${WORKSPACE}":/srv/workspace -w /srv/workspace registry.bleemeo.work/bleemeo/nsisbuilder unzip telegraf/telegraf.zip
 
-docker run --rm -v "${WORKSPACE}":/srv/workspace registry.bleemeo.work/bleemeo/nsisbuilder /srv/workspace/venv_pynsist/bin/pip install wmi 'pynsist<2.0'
+docker run --rm -v "${WORKSPACE}":/srv/workspace registry.bleemeo.work/bleemeo/nsisbuilder /srv/workspace/venv_pynsist/bin/pip install 'wmi<1.5' 'pynsist<2.0'
 docker run --rm -v "${WORKSPACE}":/srv/workspace -w /srv/workspace registry.bleemeo.work/bleemeo/nsisbuilder /srv/workspace/venv_pynsist/bin/pynsist bleemeo-agent-${VERSION}-windows/packaging/windows/installer.cfg
 
 mkdir -p "${WORKSPACE}"/result

@@ -263,6 +263,8 @@ def is_process_running(process_name, top_info):
     for process in top_info['processes']:
         if process_name == process['name']:
             return True
+        if os.name == "nt" and process_name + ".exe" == process["name"]:
+            return True
 
     return False
 
