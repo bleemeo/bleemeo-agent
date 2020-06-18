@@ -65,6 +65,5 @@ build_fedora(){
 }
 
 build_centos 7
-build_fedora 29
 build_fedora 30
 build_fedora 31
