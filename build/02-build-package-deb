@@ -49,7 +49,6 @@ build_package(){
 build_package ubuntu trusty ~ubuntu14.04
 build_package ubuntu xenial ~ubuntu16.04
 build_package ubuntu bionic ~ubuntu18.04
-build_package ubuntu disco ~ubuntu19.04
 build_package ubuntu eoan ~ubuntu19.10
 build_package ubuntu focal ~ubuntu20.04
 build_package debian wheezy ~debian7
