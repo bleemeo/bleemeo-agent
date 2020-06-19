@@ -1048,7 +1048,15 @@ class BleemeoConnector(threading.Thread):
 
         try:
             if tcp_to_mqtt is not None:
-                tls_context = ssl.create_default_context()
+                cafile = self.core.config['bleemeo.mqtt.cafile']
+                if cafile is not None and '$INSTDIR' in cafile and os.name == 'nt':
+                    # Under Windows, $INSTDIR is remplaced by installation
+                    # directory
+                    cafile = cafile.replace(
+                        '$INSTDIR',
+                        bleemeo_agent.util.windows_instdir()
+                    )
+                tls_context = ssl.create_default_context(cafile=cafile)
                 ssl_sock = tls_context.wrap_socket(
                     tcp_to_mqtt,
                     server_hostname=self.core.config['bleemeo.mqtt.host'],
