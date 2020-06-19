@@ -713,6 +713,7 @@ class BleemeoConnector(threading.Thread):
         self._duplicate_disable_until = 0
         self._mqtt_queue_size = 0
         self._mqtt_thread = None
+        self._last_diagnostic = None
 
         self.trigger_full_sync = False
         self.trigger_fact_sync = 0
@@ -959,9 +960,11 @@ class BleemeoConnector(threading.Thread):
         """ Check the Bleemeo connector works correctly. Log any issue found
         """
         clock_now = bleemeo_agent.util.get_clock()
+        need_diag = False
 
         if self.agent_uuid is None:
             logging.info('Agent not yet registered')
+            need_diag = True
 
         if not self.connected and self._mqtt_reconnect_at > clock_now:
             logging.info(
@@ -972,6 +975,7 @@ class BleemeoConnector(threading.Thread):
             logging.info(
                 'Bleemeo connection (MQTT) is currently not established'
             )
+            need_diag = True
 
         if self._mqtt_queue_size >= MQTT_QUEUE_MAX_SIZE:
             logging.warning(
@@ -989,6 +993,84 @@ class BleemeoConnector(threading.Thread):
                 '%s metric points blocked due to metric not yet registered',
                 self._unregistered_metric_queue.qsize(),
             )
+
+        if need_diag and (
+                self._last_diagnostic is None or
+                clock_now - self._last_diagnostic > 3600):
+            self._last_diagnostic = clock_now
+            try:
+                self._diagnostic()
+            except Exception:  # pylint: disable=broad-except
+                logging.info(
+                    "Diagnostic for Bleemeo connector connection failed:",
+                    exc_info=True,
+                )
+
+    def _diagnostic(self):
+        logging.info("Diagnostic for Bleemeo Cloud platform connection:")
+        logging.info("The Bleemeo account UUID is %s", self.account_id)
+        if self.agent_uuid is None:
+            logging.info("This agnet is not yet registered")
+        else:
+            logging.info(
+                "This agent is registered with UUID = %s", self.agent_uuid,
+            )
+        try:
+            mqtt_ip = socket.gethostbyname(self.core.config['bleemeo.mqtt.host'])
+            logging.info(
+                "MQTT server (%s) resolve to IP %s",
+                self.core.config['bleemeo.mqtt.host'],
+                mqtt_ip,
+            )
+        except socket.error as exc:
+            logging.info(
+                "Unable to resolve DNS name for %s: %s",
+                self.core.config['bleemeo.mqtt.host'],
+                exc
+            )
+        try:
+            tcp_to_mqtt = socket.create_connection(
+                (
+                    self.core.config['bleemeo.mqtt.host'],
+                    self.core.config['bleemeo.mqtt.port'],
+                ),
+                timeout=5
+            )
+        except socket.error as exc:
+            logging.info(
+                "Unable to open an TCP connection to %s:%d: %s."
+                " Is you firewall blocking connection ?",
+                self.core.config['bleemeo.mqtt.host'],
+                self.core.config['bleemeo.mqtt.port'],
+                exc,
+            )
+            tcp_to_mqtt = None
+
+        try:
+            if tcp_to_mqtt is not None:
+                tls_context = ssl.create_default_context()
+                ssl_sock = tls_context.wrap_socket(
+                    tcp_to_mqtt,
+                    server_hostname=self.core.config['bleemeo.mqtt.host'],
+                    do_handshake_on_connect=False,
+                )
+
+                ssl_sock.settimeout(5)
+                ssl_sock.do_handshake()
+                logging.info("SSL connection to MQTT can be established")
+        except ssl.CertificateError as exc:
+            logging.info("Unable to open SSL connection to MQTT: %s", exc)
+        except socket.error as exc:
+            logging.info("Unable to open SSL connection to MQTT: %s", exc)
+
+        if tcp_to_mqtt is not None:
+            tcp_to_mqtt.close()
+
+        try:
+            requests.get(self.bleemeo_base_url, timeout=5)
+        except Exception as exc:
+            logging.info("Unable to do HTTP request to Bleemeo: %s", exc)
+
 
     def _mqtt_setup(self):
         self.mqtt_client.will_set(
