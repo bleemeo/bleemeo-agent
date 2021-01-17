@@ -1,3 +1,12 @@
+
+**Important Note**
+
+bleemeo-agent has been deprecated in favor of glouton, which offer the more features, is written 
+in Go for better performance with lighter footprint.
+
+Check https://github.com/bleemeo/glouton/
+
+
 # Bleemeo Monitoring Agent
 
 
